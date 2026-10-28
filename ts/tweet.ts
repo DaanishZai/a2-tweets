@@ -9,22 +9,36 @@ class Tweet {
 
 	//returns either 'live_event', 'achievement', 'completed_event', or 'miscellaneous'
     get source():string {
-        //TODO: identify whether the source is a live event, an achievement, a completed event, or miscellaneous.
-        return "unknown";
+        if (this.text.toLowerCase().includes("completed") || this.text.toLowerCase().includes("posted")){
+            return 'completed_event';
+        }
+        else if (this.text.toLowerCase().includes('live')){
+            return 'live_event';
+        }
+        else if (this.text.toLowerCase().includes('achieved')){
+            return 'achievement';
+        }
+        else {
+            return 'miscellaneous';
+        }
     }
 
     //returns a boolean, whether the text includes any content written by the person tweeting.
     get written():boolean {
-        //TODO: identify whether the tweet is written
-        return false;
+        if (this.source != 'completed_event') {
+            return false;
+        }
+        return this.text.includes(' - ');
     }
 
     get writtenText():string {
         if(!this.written) {
             return "";
         }
-        //TODO: parse the written text from the tweet
-        return "";
+        let text = this.text.split(' - ').slice(1).join(' - ');
+        text = text.replace(/https?:\/\/\S+/g, '');
+        text = text.replace(/#Runkeeper/gi, '');
+        return text.trim()
     }
 
     get activityType():string {
@@ -32,19 +46,48 @@ class Tweet {
             return "unknown";
         }
         //TODO: parse the activity type from the text of the tweet
-        return "";
+        let parsed = this.text.split(' ')
+        for (let i =0; i < parsed.length; i++){
+            if (parsed[i] == 'km' || parsed[i] == 'mi') {
+                return parsed[i + 1];
+            }
+        }
+
+        return "unknown";
     }
 
     get distance():number {
         if(this.source != 'completed_event') {
             return 0;
         }
-        //TODO: prase the distance from the text of the tweet
+        let parsed = this.text.split(' ');
+        for (let i = 0; i < parsed.length; i++) {
+            if (parsed[i] == 'km') {
+                return parseFloat(parsed[i - 1]) / 1.609;
+            }
+            if (parsed[i] == 'mi') {
+                return parseFloat(parsed[i - 1]);
+            }
+        }
         return 0;
     }
 
     getHTMLTableRow(rowNumber:number):string {
-        //TODO: return a table row which summarizes the tweet with a clickable link to the RunKeeper activity
-        return "<tr></tr>";
+        let link = "";
+        let words = this.text.split(' ');
+        for (let i = 0; i < words.length; i++) {
+            if (words[i].indexOf('http') == 0) {
+                link = words[i];
+                break;
+            }
+        }
+
+        let c = this.writtenText;
+
+        if (link != "") {
+            c = c + ' <a href="' + link + '">' + link + '</a>';
+        }
+
+        return '<tr><th scope="row">' + rowNumber + '</th><td>' + this.activityType + '</td><td>' + c + '</td></tr>';
     }
 }
